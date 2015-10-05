@@ -3,23 +3,23 @@ package reactor;
 import reactorapi.EventHandler;
 
 public class Event<T> {
-	private final T event;
-	private final EventHandler<T> handler;
+    private final T event;
+    private final EventHandler<T> handler;
 
-	public Event(T e, EventHandler<T> eh) {
-		event = e;
-		handler = eh;
-	}
+    public Event(T e, EventHandler<T> eh) {
+        event = e;
+        handler = eh;
+    }
 
-	public T getEvent() {
-		return event;
-	}
+    public T getEvent() {
+        return event;
+    }
 
-	public EventHandler<T> getHandler() {
-		return handler;
-	}
+    public EventHandler<T> getHandler() {
+        return handler;
+    }
 
-	public void handle() {
-		// TODO: Implement Event.handle().
-	}
+    public void handle() {
+        // TODO: Implement Event.handle().
+    }
 }
