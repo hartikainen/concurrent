@@ -1,32 +1,45 @@
 import java.text.StringCharacterIterator;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 // Simple Producer Consumer system simulator
 public class ProducerConsumerSystem {
 
+    private static final int PRODUCER_COUNT = 3;
+
     static class Producer extends Thread {
         private final String producerName;
-        //TODO add variables
+        private final LinkedBlockingQueue<Data> buffer;
 
         final StringCharacterIterator source =
             new StringCharacterIterator(" concurrent programming rocks");
 
-        public Producer(/* data buffer and other arguments of your choise */, String n) {
+        public Producer(LinkedBlockingQueue<Data> buffer, String n) {
+            this.buffer = buffer;
             this.producerName = n;
-            //TODO
         }
 
         @Override
         public void run() {
-            //TODO implement the following
-            // - produce data with produce()
-            // - append the date to the buffer
-            // - loop until the entire source string has been handled
+            Data data;
+
+            do {
+                try {
+                    data = produce();
+                } catch (InterruptedException ie) { return; }
+
+                synchronized (buffer) {
+                    try {
+                        buffer.put(data);
+                        buffer.notify();
+                    } catch (InterruptedException ie) { return; }
+                }
+            } while (!data.isEnd);
         }
 
         public Data produce() throws InterruptedException {
             // Random sleep to simulate asynchronicity
-            Thread.sleep((long)(Math.random() * 3000));
+            Thread.sleep((long)(Math.random() * 300));
 
             // Return the next character in the source string
             // next() returns StringCharacterIterator.DONE
@@ -36,18 +49,35 @@ public class ProducerConsumerSystem {
     }
 
     static class Consumer extends Thread {
-        //TODO add variables
+        private final LinkedBlockingQueue<Data> buffer;
 
-        public Consumer(/* data buffer and other arguments of your choise */) {
-            //TODO
+        public Consumer(LinkedBlockingQueue<Data> buffer) {
+            this.buffer = buffer;
         }
 
         @Override
         public void run() {
-            //TODO implement the following
-            // - take data from the buffer
-            // - process the data by calling consume()
-            // - loop forever (or until all three producers exit)
+            int endCount = 0;
+            Data data;
+
+            while (endCount < PRODUCER_COUNT) {
+                synchronized (buffer) {
+                    try {
+                        while (buffer.size() < 1) {
+                            buffer.wait();
+                        }
+                    } catch (InterruptedException ie) { }
+
+                    try {
+                        data = buffer.take();
+                        if (data.isEnd) {
+                            endCount++;
+                        } else {
+                            consume(data);
+                        }
+                    } catch (InterruptedException ie) { }
+                }
+            }
         }
 
         private void consume(Data msg) {
@@ -70,10 +100,22 @@ public class ProducerConsumerSystem {
     }
 
     public static void main(String[] args) {
-        //TODO implement the following
-        // - create an instance of a data buffer of your choice
-        // - create three producers, each with an unique name
-        // - create a single consumer
-        // - start all of the producers and consumers
+        LinkedBlockingQueue<Data> buffer = new LinkedBlockingQueue<Data>();
+        Producer[] producers = new Producer[PRODUCER_COUNT];
+        Consumer consumer;;
+        String name;
+
+        for (int i=0; i<PRODUCER_COUNT; i++) {
+            name = "producer " + i;
+            producers[i] = new Producer(buffer, name);
+        }
+
+        consumer = new Consumer(buffer);
+
+        for (int i=0; i<PRODUCER_COUNT; i++) {
+            producers[i].start();
+        }
+
+        consumer.start();
     }
 }
