@@ -3,11 +3,15 @@ package reactor;
 import reactorapi.*;
 
 public class Dispatcher {
+    private static final int DEFAULT_CAPACITY = 10;
+    private final int capacity;
+
     public Dispatcher() {
-        this(10);
+        this(DEFAULT_CAPACITY);
     }
 
     public Dispatcher(int capacity) {
+        this.capacity = capacity;
         // TODO: Implement Dispatcher(int).
     }
 

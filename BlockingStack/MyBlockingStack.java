@@ -13,7 +13,7 @@ public class MyBlockingStack<T> implements BlockingStack<T> {
     }
 
     public void push(T object) throws InterruptedException {
-        if (object == null) throw new IllegalArgumentException();
+        if (object == null) throw new NullPointerException();
 
         System.out.println("In push method");
 

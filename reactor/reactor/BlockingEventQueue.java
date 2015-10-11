@@ -2,10 +2,11 @@ package reactor;
 
 import reactorapi.BlockingQueue;
 import java.util.List;
+import java.util.ArrayList;
 
 // TODO: check the type
 public class BlockingEventQueue<T> implements BlockingQueue<Event<? extends T>> {
-    private List<Event<? extends T>> eventList;
+    private final ArrayList<Event<? extends T>> eventList;
     private final int capacity;
 
     // Monitors to be used to wait for the list to be notempty or notFull,
@@ -22,12 +23,12 @@ public class BlockingEventQueue<T> implements BlockingQueue<Event<? extends T>> 
         }
 
         this.capacity = capacity;
-        this.eventList = new List<Event<? extends T>>(capacity);
+        this.eventList = new ArrayList<Event<? extends T>>(capacity);
     }
 
     // TODO: check the lock!
     public int getSize() {
-        final int size = 0;
+        int size = 0;
 
         synchronized (eventList) {
             size = eventList.size();
@@ -37,29 +38,27 @@ public class BlockingEventQueue<T> implements BlockingQueue<Event<? extends T>> 
     }
 
     public int getCapacity() {
-        return this.capacity;
+        return capacity;
     }
 
     // TODO: the InterruptedException?
     public Event<? extends T> get() throws InterruptedException {
-        Event<? extends T> event;
+        final Event<? extends T> event;
 
         synchronized (eventList) {
             // TODO: Interrupting??
             try {
-                while (empty) {
-                    notEmpty.wait();
-                }
+                while (eventList.size() < 1) { eventList.wait(); }
             } catch (InterruptedException ie) {
-                // TODO: notEmpty.notify() ?
                 throw ie;
+                // TODO: ?
             }
 
-            event = this.eventList.remove(0);
+            event = eventList.remove(0);
 
             if (eventList.size() == capacity - 1) {
                 // TODO: check if notify is sufficient
-                notFull.notifyAll();
+                eventList.notifyAll();
             }
         }
 
@@ -67,9 +66,11 @@ public class BlockingEventQueue<T> implements BlockingQueue<Event<? extends T>> 
     }
 
     public List<Event<? extends T>> getAll() {
-        synchronized (eventList) {
-            List<Event<? extends T>> eventList;
-        }
+        // synchronized (eventList) {
+        //     List<Event<? extends T>> eventList;
+        // }
+        //return new ArrayList<Event<? extends T>>();
+        return null;
     }
 
     public void put(Event<? extends T> event) throws InterruptedException {
@@ -77,18 +78,19 @@ public class BlockingEventQueue<T> implements BlockingQueue<Event<? extends T>> 
 
         synchronized (eventList) {
             try {
-                while (full) {
-                    notFull.wait();
+                while (eventList.size() >= capacity) {
+                    eventList.wait();
                 }
             } catch (InterruptedException ie) {
                 throw ie;
+                // TODO : ?
             }
 
             this.eventList.add(event);
 
             if (eventList.size() == 1) {
                 // TODO: check if notify is sufficient
-                notEmpty.notifyAll();
+                eventList.notifyAll();
             }
         }
     }
