@@ -4,14 +4,12 @@ public class MyBlockingStack<T> implements BlockingStack<T> {
     private int capacity;
     private final ArrayList<T> stack;
 
-    private final Object notEmpty = new Object();
-    private final Object notFull  = new Object();
-
     public MyBlockingStack(int capacity) {
         this.capacity = capacity;
         this.stack = new ArrayList<T>(capacity);
     }
 
+    @Override
     public void push(T object) throws InterruptedException {
         if (object == null) throw new NullPointerException();
 
@@ -20,11 +18,7 @@ public class MyBlockingStack<T> implements BlockingStack<T> {
         synchronized (stack) {
             while (stack.size() >= capacity) {
                 System.out.println("Queue full, waiting...");
-                try { stack.wait(); }
-                catch (InterruptedException ie) {
-                    throw ie;
-                    //TODO: what should be done?
-                }
+                stack.wait()
             }
 
             stack.add(0, object);
@@ -36,6 +30,7 @@ public class MyBlockingStack<T> implements BlockingStack<T> {
         }
     }
 
+    @Override
     public T pop() throws InterruptedException {
         final T object;
 
@@ -45,11 +40,7 @@ public class MyBlockingStack<T> implements BlockingStack<T> {
             while (stack.size() < 1) {
                 System.out.println("Queue empty, waiting...");
                 // TODO: Handle notEmpty and notFull with sempahores
-                try { stack.wait(); }
-                catch (InterruptedException ie) {
-                    throw ie;
-                    //TODO: what should be done?
-                }
+                stack.wait();
             }
 
             object = stack.remove(0);
@@ -63,6 +54,7 @@ public class MyBlockingStack<T> implements BlockingStack<T> {
         return object;
     }
 
+    @Override
     public int size() {
         final int size;
 
