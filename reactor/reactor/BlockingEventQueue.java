@@ -11,15 +11,16 @@ public class BlockingEventQueue<T> implements BlockingQueue<Event<? extends T>> 
 
     // Monitors to be used to wait for the list to be notempty or notFull,
     // when getting or setting events, respectively.
-    private final Object notEmpty = new Object();
-    private final Object notFull  = new Object();
 
-    private volatile boolean empty = true;
-    private volatile boolean full  = false;
+    // private final Object notEmpty = new Object();
+    // private final Object notFull  = new Object();
+
+    // private volatile boolean empty = true;
+    // private volatile boolean full  = false;
 
     public BlockingEventQueue(int capacity) {
         if (capacity < 1) {
-            throw new IllegalArgumentException("The length of the queue must be > 0");
+            throw new IllegalArgumentException();
         }
 
         this.capacity = capacity;
@@ -47,11 +48,8 @@ public class BlockingEventQueue<T> implements BlockingQueue<Event<? extends T>> 
 
         synchronized (eventList) {
             // TODO: Interrupting??
-            try {
-                while (eventList.size() < 1) { eventList.wait(); }
-            } catch (InterruptedException ie) {
-                throw ie;
-                // TODO: ?
+            while (eventList.size() < 1) {
+                eventList.wait();
             }
 
             event = eventList.remove(0);
@@ -77,13 +75,8 @@ public class BlockingEventQueue<T> implements BlockingQueue<Event<? extends T>> 
         if (event == null) throw new NullPointerException();
 
         synchronized (eventList) {
-            try {
-                while (eventList.size() >= capacity) {
-                    eventList.wait();
-                }
-            } catch (InterruptedException ie) {
-                throw ie;
-                // TODO : ?
+            while (eventList.size() >= capacity) {
+                eventList.wait();
             }
 
             this.eventList.add(event);
