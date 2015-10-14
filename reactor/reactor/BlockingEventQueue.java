@@ -49,11 +49,13 @@ public class BlockingEventQueue<T> implements BlockingQueue<Event<? extends T>> 
     }
 
     public List<Event<? extends T>> getAll() {
-        final List<Event<? extends T>> returnList;
+        final ArrayList<Event<? extends T>> returnList;
 
         synchronized (eventList) {
             returnList = new ArrayList<Event<? extends T>>(eventList);
             eventList.clear();
+
+            eventList.notifyAll();
         }
 
         return returnList;
