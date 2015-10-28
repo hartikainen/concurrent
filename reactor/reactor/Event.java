@@ -21,6 +21,5 @@ public class Event<T> {
 
     public void handle() {
         handler.handleEvent(event);
-        // TODO: Implement Event.handle().
     }
 }
