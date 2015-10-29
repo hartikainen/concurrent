@@ -1,21 +1,23 @@
 package reactor;
 
-import reactorapi.*;
+import reactorapi.EventHandler;
+import reactorapi.Handle;
 
 public class WorkerThread<T> extends Thread {
     private final EventHandler<T> handler;
     private final BlockingEventQueue<Object> queue;
     private boolean running = true;
 
-    // Additional fields are allowed.
-
     public WorkerThread(EventHandler<T> eh, BlockingEventQueue<Object> q) {
         handler = eh;
         queue = q;
     }
 
+    /**
+     * Read the data from the handle, create and event, and push it to the queue
+     */
     public void run() {
-        EventHandle<T> handle = handler.getHandle();
+        Handle<T> handle = handler.getHandle();
 
         while (running) {
             T data = handle.read();
@@ -29,12 +31,15 @@ public class WorkerThread<T> extends Thread {
 
             if (data == null) break;
         }
-        // TODO: Implement WorkerThread.run().
     }
 
+    /**
+     * Set the value of running to <code>false</code>, and interrupt the thread
+     * to make sure that the <code>queue.put</code> in the {@link #run()}
+     * will not get locked.
+     */
     public void cancelThread() {
         running = false;
         interrupt();
-        // TODO: Implement WorkerThread.cancelThread().
     }
 }
