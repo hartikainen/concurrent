@@ -22,7 +22,7 @@ public class Dispatcher {
         this.workerList = new HashMap<EventHandler<?>, WorkerThread<?>>();
     }
 
-    public synchronized void handleEvents() throws InterruptedException {
+    public void handleEvents() throws InterruptedException {
         Event<?> event;
         EventHandler<?> handler;
 
@@ -42,12 +42,12 @@ public class Dispatcher {
         // TODO: Implement Dispatcher.select().
     }
 
-    public void addHandler(EventHandler<?> h) {
+    public <T> void addHandler(EventHandler<T> h) {
         if (h == null) throw new IllegalArgumentException();
 
         handlerList.add(h);
 
-        WorkerThread<?> thread = new WorkerThread(h, eventQueue);
+        WorkerThread<T> thread = new WorkerThread(h, eventQueue);
         workerList.put(h, thread);
 
         thread.start();
@@ -56,10 +56,10 @@ public class Dispatcher {
         // TODO: Implement Dispatcher.addHandler(EventHandler).
     }
 
-    public void removeHandler(EventHandler<?> h) {
+    public <T> void removeHandler(EventHandler<T> h) {
         if (h == null) throw new IllegalArgumentException();
 
-        WorkerThread<?> thread = workerList.remove(h);
+        WorkerThread<T> thread = workerList.remove(h);
 
         if (thread != null) {
             thread.cancelThread();

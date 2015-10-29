@@ -15,14 +15,16 @@ public class WorkerThread<T> extends Thread {
     }
 
     public void run() {
+        EventHandle<T> handle = handler.getHandle();
+
         while (running) {
-            T data = handler.getHandle().read();
+            T data = handle.read();
             Event<T> event = new Event<T>(data, handler);
 
             try {
                 queue.put(event);
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                return;
             }
 
             if (data == null) break;
@@ -32,6 +34,7 @@ public class WorkerThread<T> extends Thread {
 
     public void cancelThread() {
         running = false;
+        interrupt();
         // TODO: Implement WorkerThread.cancelThread().
     }
 }
