@@ -6,7 +6,7 @@ import hangmanrules.HangmanRules;
 
 public class HangmanServer {
     private final Dispatcher dispatcher;
-    private final HangmanRules rules;
+    private final HangmanRules<TCPTextHandler> rules;
 
     public HangmanServer(String word, int tries) {
         this.dispatcher = new Dispatcher();
@@ -39,8 +39,5 @@ public class HangmanServer {
 
         HangmanServer server = new HangmanServer(word, tries);
         server.startGame();
-
-        // TODO: allow threads to die gracefully
-        //server.endGame();
     }
 }
