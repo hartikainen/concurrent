@@ -8,6 +8,8 @@ import java.util.ArrayList;
 public class BlockingEventQueue<T> implements BlockingQueue<Event<? extends T>> {
     private final ArrayList<Event<? extends T>> eventList;
     private final int capacity;
+    private final Semaphore notEmpty;
+    private final Semaphore notFull;
 
     public BlockingEventQueue(int capacity) {
         if (capacity < 1) {
@@ -16,10 +18,13 @@ public class BlockingEventQueue<T> implements BlockingQueue<Event<? extends T>> 
 
         this.capacity = capacity;
         this.eventList = new ArrayList<Event<? extends T>>(capacity);
+        this.notEmpty = new Semaphore(0);
+        this.notFull  = new Semaphore(capacity);
     }
 
+    @Override
     public int getSize() {
-        int size = 0;
+        final int size;
 
         synchronized (eventList) {
             size = eventList.size();
@@ -28,50 +33,55 @@ public class BlockingEventQueue<T> implements BlockingQueue<Event<? extends T>> 
         return size;
     }
 
+    @Override
     public int getCapacity() {
         return capacity;
     }
 
+    @Override
     public Event<? extends T> get() throws InterruptedException {
         final Event<? extends T> event;
 
+        notEmpty.acquire();
+
         synchronized (eventList) {
-            while (eventList.size() < 1) {
-                eventList.wait();
-            }
-
             event = eventList.remove(0);
-
-            eventList.notifyAll();
         }
+
+        notFull.release();
 
         return event;
     }
 
+    @Override
     public List<Event<? extends T>> getAll() {
         final ArrayList<Event<? extends T>> returnList;
+        final int elements;
 
         synchronized (eventList) {
-            returnList = new ArrayList<Event<? extends T>>(eventList);
-            eventList.clear();
+            elements = notEmpty.tryAcquireAll();
+            returnList = new ArrayList<Event<? extends T>>(elements);
 
-            eventList.notifyAll();
+            for (int i=0; i<elements; i++) {
+                returnList.add(eventList.remove(0));
+            }
         }
+
+        notFull.release(capacity);
 
         return returnList;
     }
 
+    @Override
     public void put(Event<? extends T> event) throws InterruptedException {
         if (event == null) throw new NullPointerException();
 
+        notFull.acquire();
+
         synchronized (eventList) {
-            while (eventList.size() >= capacity) {
-                eventList.wait();
-            }
-
             eventList.add(event);
-
-            eventList.notifyAll();
         }
+
+        notEmpty.release();
     }
 }
