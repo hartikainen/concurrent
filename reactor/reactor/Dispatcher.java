@@ -6,31 +6,32 @@ import reactorapi.*;
 
 public class Dispatcher {
     private static final int DEFAULT_CAPACITY = 10;
-    private final int capacity;
-    private final BlockingEventQueue<Event<?>> eventQueue;
-    private final ArrayList<EventHandler<?>> handlerList;
-    private final HashMap<EventHandler<?>, WorkerThread<?>> workerList;
+    private final BlockingEventQueue<Object> eventQueue;
+    //private final ArrayList<EventHandler<? extends Object>> handlerList;
+    private final HashMap<EventHandler<? extends Object>,
+                          WorkerThread<? extends Object>> workerList;
 
     public Dispatcher() {
         this(DEFAULT_CAPACITY);
     }
 
     public Dispatcher(int capacity) {
-        this.capacity = capacity;
-        this.eventQueue = new BlockingEventQueue<Event<?>>(capacity);
-        this.handlerList = new ArrayList<EventHandler<?>>();
-        this.workerList = new HashMap<EventHandler<?>, WorkerThread<?>>();
+        this.eventQueue = new BlockingEventQueue<Object>(capacity);
+        //this.handlerList = new ArrayList<EventHandler<? extends Object>>();
+        this.workerList = new HashMap<EventHandler<? extends Object>,
+                                      WorkerThread<? extends Object>>();
     }
 
-    public void handleEvents() throws InterruptedException {
+    public <T> void handleEvents() throws InterruptedException {
         Event<?> event;
         EventHandler<?> handler;
 
-        while (handlerList.size() > 0) {
+        while (workerList.size() > 0) {
+            //while (handlerList.size() > 0) {
             event = select();
             handler = event.getHandler();
 
-            if (!handlerList.contains(handler)) continue;
+            if (!workerList.containsKey(handler)) continue;
 
             event.handle();
         }
@@ -39,17 +40,15 @@ public class Dispatcher {
 
     public Event<?> select() throws InterruptedException{
         return eventQueue.get();
-        // TODO: Implement Dispatcher.select().
     }
 
     public <T> void addHandler(EventHandler<T> h) {
         if (h == null) throw new IllegalArgumentException();
 
-        handlerList.add(h);
+        // handlerList.add(h);
 
-        WorkerThread<T> thread = new WorkerThread(h, eventQueue);
+        WorkerThread<T> thread = new WorkerThread<T>((EventHandler<T>)h, eventQueue);
         workerList.put(h, thread);
-
         thread.start();
 
         // or a null message is received
@@ -59,15 +58,14 @@ public class Dispatcher {
     public <T> void removeHandler(EventHandler<T> h) {
         if (h == null) throw new IllegalArgumentException();
 
-        WorkerThread<T> thread = workerList.remove(h);
+        WorkerThread<?> thread = workerList.remove(h);
 
         if (thread != null) {
             thread.cancelThread();
         }
 
-        workerList.remove(h);
         // TODO: what if h not in handlerList?
-        handlerList.remove(h);
+        //handlerList.remove(h);
         // TODO: Implement Dispatcher.removeHandler(EventHandler).
     }
 
