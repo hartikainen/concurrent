@@ -1,105 +1,73 @@
 package hangman;
 
 import java.net.Socket;
-import java.util.*;
 
 import reactorapi.EventHandler;
 import hangmanrules.HangmanRules;
-import hangmanrules.HangmanRules.Player;
 
-import reactor.Dispatcher;
-
+/**
+ * An {@link EventHandler} that handles the string input from the
+ * {@link Handle}. The actual game functionalities are handled through the
+ * {@link HangmanServer}.
+ */
 public class TCPTextHandler implements EventHandler<String>{
     private final TCPTextHandle handle;
-    private final HangmanRules rules;
-    private final Dispatcher dispatcher;
-    private Player player;
+    private final HangmanServer server;
+    private HangmanRules<TCPTextHandler>.Player player;
 
+    /**
+     * Create a handler that handles the string input from the
+     * {@link TCPTextHandle}
+     *
+     * @param socket
+     *            the socket for the TCPTextHandle
+     *
+     * @param server
+     *            the actual server that the inputs are forwarded to.
+     */
     public TCPTextHandler(Socket socket,
-                          Dispatcher dispatcher,
-                          HangmanRules rules) {
+                          HangmanServer server) {
 
         this.handle = new TCPTextHandle(socket);
-        this.rules = rules;
-        this.dispatcher = dispatcher;
+        this.server = server;
         this.player = null;
     }
 
+
+    /**
+     * Returns the {@link TCPTextHandle} associated with the
+     * {@link TCPTextHandler}
+     */
     @Override
     public TCPTextHandle getHandle() {
         return handle;
     }
 
+    /**
+     * Handle the string messages received from the {@link Handle}. The first
+     * string input creates a new player to the game, and the subsequent strings
+     * are the actual guesses. If the message is null, remove the handler from
+     * the game. Also remove the player if it was created.
+     *
+     * @param s
+     *            the message to be handled
+     */
     @Override
     public void handleEvent(String s) {
         if (s == null) {
-            dispatcher.removeHandler(this);
+            if (player != null) {
+                server.disconnectPlayer(player);
+            } else {
+                // Case when the handler is closed before the player is created
+                server.removeTCPTextHandler(this);
+            }
             return;
         }
 
-        s = s.trim();
-
         if (player == null) {
-            createPlayer(s);
+            player = server.addPlayer(this, s.trim());
         } else {
-            makeGuess(s);
+            server.makeGuess(player, s.trim());
         }
-    }
-
-    /**
-     * Broadcasts a message to each player in the game.
-     */
-    private void broadcast(String message) {
-        TCPTextHandler playerHandler;
-        List<?> playersO = rules.getPlayers();
-
-        for (Object o : playersO) {
-            Player plr = (Player)o;
-            playerHandler = (TCPTextHandler)plr.playerData;
-            playerHandler.getHandle().write(message);
-        }
-    }
-
-    private void closeGame() {
-        TCPTextHandler playerHandler;
-        List<?> playersO = rules.getPlayers();
-
-        for (Object o : playersO) {
-            Player plr = (Player)o;
-            playerHandler = (TCPTextHandler)plr.playerData;
-            playerHandler.close();
-        }
-    }
-
-    private void makeGuess(String guessString) {
-        if (guessString.length() > 1) {
-            System.err.println("Received guess longer than one char." +
-                               "Using charAt(0), ignoring rest.");
-        }
-
-        // Just to make sure we don't call charAt(0) for 0 length string
-        char guess = (guessString.length() > 0) ? guessString.charAt(0) : ' ';
-
-        rules.makeGuess(guess);
-
-        String message = player.getGuessString(guess);
-        broadcast(message);
-
-        System.err.println("TODO: remove, making guess");
-
-        if (rules.gameEnded()) {
-            closeGame();
-        }
-    }
-
-    private void createPlayer(String name) {
-        player = rules.addNewPlayer(this, name);
-        String status = rules.getStatus();
-        handle.write(status);
-    }
-
-    private void close() {
-        handle.close();
-        dispatcher.removeHandler(this);
     }
 }
