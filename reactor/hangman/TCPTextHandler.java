@@ -67,7 +67,7 @@ public class TCPTextHandler implements EventHandler<String>{
         if (player == null) {
             player = server.addPlayer(this, s.trim());
         } else {
-            server.makeGuess(player, s.trim());
+            server.makeGuess(player, s);
         }
     }
 }
