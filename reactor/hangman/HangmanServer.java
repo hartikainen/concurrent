@@ -23,8 +23,6 @@ public class HangmanServer {
     private final HangmanRules<TCPTextHandler> game;
     private final AcceptHandler acceptHandler;
 
-    private static final boolean DEBUG = false;
-
     public HangmanServer(String word, int tries) {
         this.dispatcher = new Dispatcher();
         this.game = new HangmanRules<TCPTextHandler>(word, tries);
@@ -205,7 +203,7 @@ public class HangmanServer {
             }
         }
 
-        if (DEBUG) System.err.println(errorMsg);
+        if (errorMsg.length() > 0) System.err.println(errorMsg);
 
         return guess;
     }
