@@ -1,6 +1,5 @@
 package reactor;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import reactorapi.*;
 
@@ -44,7 +43,7 @@ public class Dispatcher {
      * handlers in the workerList. Only handle event if the associated
      * {@link EventHandler} is still in the <code>workerList</code>.
      */
-    public <T> void handleEvents() throws InterruptedException {
+    public void handleEvents() throws InterruptedException {
         Event<?> event;
         EventHandler<?> handler;
 

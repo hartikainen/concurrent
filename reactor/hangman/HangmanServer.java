@@ -4,13 +4,12 @@ import java.net.Socket;
 
 import java.util.List;
 import reactor.Dispatcher;
-import reactorapi.EventHandler;
 import hangmanrules.HangmanRules;
 
 /**
  * The server for the hangman game. Kicks off the game, i.e. creates an
- * AcceptHandle that accepts TCP connections. HangmanServer also works as
- * an interface between the actual hangman game and the game handlers.
+ * AcceptHandle, which accepts TCP connections. HangmanServer also provides
+ * an interface between the actual hangman game and the event handlers.
  */
 public class HangmanServer {
     private final Dispatcher dispatcher;
@@ -89,7 +88,8 @@ public class HangmanServer {
      * @param message
      *              the message to be sent
      */
-    private void sendMessage(Player player, String message) {
+    private void sendMessage(HangmanRules<TCPTextHandler>.Player player,
+                             String message) {
         TCPTextHandler handler = (TCPTextHandler)player.playerData;
         TCPTextHandle handle = handler.getHandle();
         handle.write(message);
@@ -121,7 +121,8 @@ public class HangmanServer {
      * @param guessString
      *              the string received as a player input
      */
-    public void makeGuess(Player player, String guessString) {
+    public void makeGuess(HangmanRules<TCPTextHandler>.Player player,
+                          String guessString) {
         if (guessString.length() > 1) {
             System.err.println("Received guess longer than one char." +
                                "Using charAt(0), ignoring rest.");
@@ -163,8 +164,6 @@ public class HangmanServer {
      * handlers and the acceptHandler.
      */
     public void endGame() {
-        TCPTextHandler handler;
-
         List<HangmanRules<TCPTextHandler>.Player> players = game.getPlayers();
 
         for (HangmanRules<TCPTextHandler>.Player player : players) {
