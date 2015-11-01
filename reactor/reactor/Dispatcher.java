@@ -1,6 +1,5 @@
 package reactor;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import reactorapi.*;
 
@@ -44,7 +43,7 @@ public class Dispatcher {
      * handlers in the workerList. Only handle event if the associated
      * {@link EventHandler} is still in the <code>workerList</code>.
      */
-    public <T> void handleEvents() throws InterruptedException {
+    public void handleEvents() throws InterruptedException {
         Event<?> event;
         EventHandler<?> handler;
 
@@ -60,40 +59,50 @@ public class Dispatcher {
 
     /**
      * Select and event from the {@link BlockingEventQueue}.
-p     *
+     *
      * @return
      *              the first element in the {@link BlockingEventQueue}
+     *
+     * @throws InterruptedException
      */
     public Event<?> select() throws InterruptedException{
         return eventQueue.get();
     }
 
     /**
-     * Add a new handler to the Dispatcher. Create and start a new
-     * WorkerThread, that pushes the events to the {@link BlockingEventQueue}
+     * Add a new (unregistered) handler to the Dispatcher. Create and start a
+     * new WorkerThread, that pushes the events to the
+     * {@link BlockingEventQueue}.
      *
      * @param
      *              The handler to be added
+     *
+     * @throws InterruptedException
      */
-    public <T> void addHandler(EventHandler<T> h) {
-        if (h == null) throw new IllegalArgumentException();
+    public <T> void addHandler(EventHandler<T> handler) {
+        if (handler == null) throw new IllegalArgumentException();
 
-        WorkerThread<T> thread = new WorkerThread<T>((EventHandler<T>)h, eventQueue);
-        workerList.put(h, thread);
+        // Don't allow same handler to be assigned twice
+        if (workerList.containsKey(handler)) return;
+
+        WorkerThread<T> thread = new WorkerThread<T>((EventHandler<T>)handler,
+                                                     eventQueue);
+        workerList.put(handler, thread);
         thread.start();
     }
 
     /**
      * Remove the given handler from the Dispatcher. Also cancel the associated
-     * thread.
+     * thread. After the handler is removed, the {@link handleEvents} will not
+     * dispatch events associated with the handler.
      *
      * @param
      *              The handler to be removed
      */
-    public <T> void removeHandler(EventHandler<T> h) {
-        if (h == null) throw new IllegalArgumentException();
+    public <T> void removeHandler(EventHandler<T> handler) {
+        if (handler == null) throw new IllegalArgumentException();
 
-        WorkerThread<?> thread = workerList.remove(h);
+        WorkerThread<?> thread = workerList.remove(handler);
 
         if (thread != null) {
             thread.cancelThread();

@@ -29,10 +29,12 @@ public class WorkerThread<T> extends Thread {
     @Override
     public void run() {
         Handle<T> handle = handler.getHandle();
+        Event<T> event;
+        T data;
 
         while (running) {
-            T data = handle.read();
-            Event<T> event = new Event<T>(data, handler);
+            data = handle.read();
+            event = new Event<T>(data, handler);
 
             try {
                 queue.put(event);
