@@ -8,14 +8,25 @@ public class WorkerThread<T> extends Thread {
     private final BlockingEventQueue<Object> queue;
     private boolean running = true;
 
+    /**
+     * Create a new WorkerThread.
+     *
+     * @param eh
+     *              The {@link EventHandler} whose {@link Handle} is read.
+     *
+     * @param q
+     *              The {@link BlockingEventQueue} to push the events to.
+     */
     public WorkerThread(EventHandler<T> eh, BlockingEventQueue<Object> q) {
-        handler = eh;
-        queue = q;
+        this.handler = eh;
+        this.queue = q;
     }
 
     /**
-     * Read the data from the handle, create and event, and push it to the queue
+     * Loop until the thread is cancelled, or a null event is received. Read the
+     * data from the handle, create and event, and push it to the queue.
      */
+    @Override
     public void run() {
         Handle<T> handle = handler.getHandle();
 
