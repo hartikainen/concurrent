@@ -51,6 +51,7 @@ public class AcceptHandler implements EventHandler<Socket> {
     public void handleEvent(Socket socket) {
         if (socket == null) {
             server.endGame();
+            return;
         }
 
         server.connect(socket);
