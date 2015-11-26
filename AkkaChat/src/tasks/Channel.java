@@ -32,8 +32,9 @@ public class Channel extends UntypedActor {
 
             context().watch(user);
             users.add(user);
-            user.tell(history, self());
+
             user.tell(new UserAdded(getChannelName(), self()), self());
+            user.tell(history, self());
         } else if (msg instanceof RemoveUser) {
             final ActorRef user = ((RemoveUser)msg).user;
 

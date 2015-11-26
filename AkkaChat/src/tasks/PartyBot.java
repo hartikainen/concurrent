@@ -1,7 +1,9 @@
 package tasks;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.io.Serializable;
 
 import messages.*;
 import akka.actor.*;
@@ -11,19 +13,21 @@ import scala.concurrent.duration.FiniteDuration;
 public class PartyBot extends UntypedActor {
 
     private static final String USERNAME = "PartyBot";
-    private static final String FESTIVE_MESSAGE = "Party! Party!";
-    private static final Object JOIN_CHANNELS = new Object();
-    private static final FiniteDuration PARTY_DURATION =
+    private static final String FESTIVE_GREETING = "Party! Party!";
+    private static final JoinAllChannels JOIN_ALL_MSG = new JoinAllChannels();
+    private static final FiniteDuration PARTY_DELAY =
         FiniteDuration.create(5, TimeUnit.SECONDS);
-    private final ExecutionContext ec = context().system().dispatcher();
+    private static final FiniteDuration IMMEDIATELY = FiniteDuration.Zero();
+
     private final HashMap<String, ActorRef> currentChannels =
         new HashMap<String, ActorRef>();
 
     public PartyBot() {
-        context().system().scheduler().schedule(FiniteDuration.Zero(),
-                                                PARTY_DURATION,
+        final ExecutionContext ec = context().system().dispatcher();
+        context().system().scheduler().schedule(IMMEDIATELY,
+                                                PARTY_DELAY,
                                                 self(),
-                                                JOIN_CHANNELS,
+                                                JOIN_ALL_MSG,
                                                 ec,
                                                 self());
     }
@@ -31,25 +35,40 @@ public class PartyBot extends UntypedActor {
     @Override
     public void onReceive(Object msg) throws Exception {
         // TODO: Check the implemented functionality
-        if (msg == JOIN_CHANNELS) {
-            ActorSelection channelSelection = context()
-                .actorSelection("/user/channels/*");
-            // TODO: How to join only channels not already joined?
-            channelSelection.tell(new AddUser(self()), self());
+        if (msg instanceof JoinAllChannels) {
+            // get all the channels from ChannelManager
+            context().actorSelection("/user/channels")
+                .tell(new ChannelManager.GetAllChannels(), self());
+        } else if (msg instanceof ChannelManager.ChannelList) {
+            HashMap<String, ActorRef> allChannels =
+                ((ChannelManager.ChannelList)msg).channelMap;
+            // check which channels the bot has joined already
+            for (Map.Entry<String, ActorRef> channel : allChannels.entrySet()) {
+                // if bot is already on the channel -> continue
+                if (currentChannels.get(channel.getKey()) != null) continue;
+                channel.getValue().tell(new AddUser(self()), self());
+            }
         } else if (msg instanceof UserAdded) {
             final UserAdded added = (UserAdded) msg;
 
             currentChannels.put(added.channelName, added.channel);
             getSender().tell(new ChatMessage(USERNAME,
-                                             FESTIVE_MESSAGE),
+                                             FESTIVE_GREETING),
                                              self());
         } else if (msg instanceof UserRemoved) {
             final UserRemoved removed = (UserRemoved) msg;
 
             currentChannels.remove(removed.channelName);
-            System.out.println("removed from channel");
         } else {
             unhandled(msg);
         }
+    }
+
+
+    /**
+     * Serializable class for handling PartyBot's scheduler messages
+     */
+    private static class JoinAllChannels implements Serializable {
+	private static final long serialVersionUID = 1L;
     }
 }

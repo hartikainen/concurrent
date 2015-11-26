@@ -1,9 +1,7 @@
 package tasks;
 
 import akka.japi.Function;
-import java.util.concurrent.TimeUnit;
 import scala.concurrent.duration.Duration;
-import scala.concurrent.duration.FiniteDuration;
 
 import akka.actor.*;
 
@@ -15,6 +13,7 @@ import akkachat.JokeConnectionClosedException;
 public class Joker extends UntypedActor {
     private final String JOKE_CHANNEL = "jokes";
     private final String USERNAME = "Joker";
+    private final int NUM_RESETS = 10;
 
     @Override
     public void preStart() {
@@ -59,9 +58,6 @@ public class Joker extends UntypedActor {
                     }
                 }
             };
-        // TODO: "actor must not be restarted any more often than necessary"
-        //FiniteDuration duration = FiniteDuration.create(10, TimeUnit.SECONDS);
-        Duration duration = Duration.create(5, "seconds");
-        return new OneForOneStrategy(10, duration, decider);
+        return new OneForOneStrategy(NUM_RESETS, Duration.Inf(), decider);
     }
 }
