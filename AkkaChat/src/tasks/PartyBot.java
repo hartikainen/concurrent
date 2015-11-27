@@ -1,7 +1,6 @@
 package tasks;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 import java.io.Serializable;
 
@@ -19,8 +18,8 @@ public class PartyBot extends UntypedActor {
         FiniteDuration.create(5, TimeUnit.SECONDS);
     private static final FiniteDuration IMMEDIATELY = FiniteDuration.Zero();
 
-    private final HashMap<String, ActorRef> currentChannels =
-        new HashMap<String, ActorRef>();
+    private final ArrayList<ActorRef> currentChannels =
+        new ArrayList<ActorRef>();
 
     public PartyBot() {
         final ExecutionContext ec = context().system().dispatcher();
@@ -37,28 +36,28 @@ public class PartyBot extends UntypedActor {
         // TODO: Check the implemented functionality
         if (msg instanceof JoinAllChannels) {
             // get all the channels from ChannelManager
-            context().actorSelection("/user/channels")
-                .tell(new ChannelManager.GetAllChannels(), self());
-        } else if (msg instanceof ChannelManager.ChannelList) {
-            HashMap<String, ActorRef> allChannels =
-                ((ChannelManager.ChannelList)msg).channelMap;
-            // check which channels the bot has joined already
-            for (Map.Entry<String, ActorRef> channel : allChannels.entrySet()) {
-                // if bot is already on the channel -> continue
-                if (currentChannels.get(channel.getKey()) != null) continue;
-                channel.getValue().tell(new AddUser(self()), self());
+            context().actorSelection("/user/channels/*")
+                .tell(new Identify(USERNAME), self());
+                //.tell(new ChannelManager.GetAllChannels(), self());
+        } else if (msg instanceof ActorIdentity) {
+            ActorIdentity identity = (ActorIdentity) msg;
+            if (identity.correlationId().equals(USERNAME)) {
+                ActorRef channel = identity.getRef();
+                if (channel != null && !currentChannels.contains(channel)) {
+                    channel.tell(new AddUser(self()), self());
+                }
             }
         } else if (msg instanceof UserAdded) {
             final UserAdded added = (UserAdded) msg;
 
-            currentChannels.put(added.channelName, added.channel);
+            currentChannels.add(added.channel);
             getSender().tell(new ChatMessage(USERNAME,
                                              FESTIVE_GREETING),
                                              self());
         } else if (msg instanceof UserRemoved) {
             final UserRemoved removed = (UserRemoved) msg;
 
-            currentChannels.remove(removed.channelName);
+            currentChannels.remove(removed.channel);
         } else {
             unhandled(msg);
         }

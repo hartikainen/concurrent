@@ -1,7 +1,6 @@
 package tasks;
 
 import java.util.HashMap;
-import java.io.Serializable;
 
 import messages.*;
 import akka.actor.*;
@@ -26,25 +25,8 @@ public class ChannelManager extends UntypedActor {
             }
 
             getSender().tell(channelActor, getSelf());
-        } else if (msg instanceof GetAllChannels) {
-            // TODO: What's the correct way to send the channels?
-            final ChannelList channelsMsg = new ChannelList(this.channelMap);
-            getSender().tell(channelsMsg, getSelf());
         } else {
             unhandled(msg);
-        }
-    }
-
-    public static class GetAllChannels implements Serializable {
-	private static final long serialVersionUID = 1L;
-    }
-
-    public static class ChannelList implements Serializable {
-        private static final long serialVersionUID = 1L;
-        public final HashMap<String, ActorRef> channelMap;
-
-        public ChannelList(HashMap<String, ActorRef> channelMap) {
-            this.channelMap = channelMap;
         }
     }
 }
