@@ -14,7 +14,8 @@ public class PartyBot extends UntypedActor {
 
     private static final String USERNAME = "PartyBot";
     private static final String FESTIVE_GREETING = "Party! Party!";
-    private static final IdentifyChannels IDENTIFY_MSG = new IdentifyChannels();
+    private static final IdentifyChannels IDENTIFY_MSG =
+        new IdentifyChannels();
     private static final FiniteDuration PARTY_DELAY =
         FiniteDuration.create(5, TimeUnit.SECONDS);
     private static final FiniteDuration IMMEDIATELY = FiniteDuration.Zero();
