@@ -16,9 +16,8 @@ public class Channel extends UntypedActor {
 
     @Override
     public void onReceive(Object msg) throws Exception {
-        // TODO: Check the functionality
         if (msg instanceof ChatMessage) {
-            final ChatMessage newMessage = (ChatMessage)msg;
+            final ChatMessage newMessage = (ChatMessage) msg;
             final Backlog message = new Backlog(getChannelName(), newMessage);
 
             messageHistory.add(newMessage);
@@ -27,8 +26,9 @@ public class Channel extends UntypedActor {
                 user.tell(message, self());
             }
         } else if (msg instanceof AddUser) {
-            final ActorRef user = ((AddUser)msg).user;
-            final Backlog history = new Backlog(getChannelName(), messageHistory);
+            final ActorRef user = ((AddUser) msg).user;
+            final Backlog history = new Backlog(getChannelName(),
+                                                messageHistory);
 
             context().watch(user);
             users.add(user);
@@ -36,12 +36,12 @@ public class Channel extends UntypedActor {
             user.tell(new UserAdded(getChannelName(), self()), self());
             user.tell(history, self());
         } else if (msg instanceof RemoveUser) {
-            final ActorRef user = ((RemoveUser)msg).user;
+            final ActorRef user = ((RemoveUser) msg).user;
 
-            users.remove(user);
             user.tell(new UserRemoved(getChannelName(), self()), self());
+            users.remove(user);
         } else if (msg instanceof Terminated) {
-            final Terminated terminated = (Terminated)msg;
+            final Terminated terminated = (Terminated) msg;
 
             users.remove(terminated.getActor());
         } else {

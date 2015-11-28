@@ -12,16 +12,17 @@ public class ChannelManager extends UntypedActor {
     @Override
     public void onReceive(Object msg) throws Exception {
         if (msg instanceof GetOrCreateChannel) {
-            final String name = ((GetOrCreateChannel)msg).name;
-            // TODO: should channelActor be final?
-            ActorRef channelActor = channelMap.get(name);
+            final String name = ((GetOrCreateChannel) msg).name;
+            final ActorRef channelActor;
 
-            // if the actor was not found, create new channel and add it
+            // if the channel does not exist, create new channel and add it
             // to the channelMap
-            if (channelActor == null) {
+            if (channelMap.get(name) == null) {
                 channelActor = context()
                     .actorOf(Props.create(Channel.class), name);
                 channelMap.put(name, channelActor);
+            } else {
+                channelActor = channelMap.get(name);
             }
 
             getSender().tell(channelActor, getSelf());

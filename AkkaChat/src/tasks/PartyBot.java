@@ -1,6 +1,7 @@
 package tasks;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.io.Serializable;
 
@@ -13,34 +14,33 @@ public class PartyBot extends UntypedActor {
 
     private static final String USERNAME = "PartyBot";
     private static final String FESTIVE_GREETING = "Party! Party!";
-    private static final JoinAllChannels JOIN_ALL_MSG = new JoinAllChannels();
+    private static final IdentifyChannels IDENTIFY_MSG = new IdentifyChannels();
     private static final FiniteDuration PARTY_DELAY =
         FiniteDuration.create(5, TimeUnit.SECONDS);
     private static final FiniteDuration IMMEDIATELY = FiniteDuration.Zero();
 
-    private final ArrayList<ActorRef> currentChannels =
-        new ArrayList<ActorRef>();
+    private final List<ActorRef> currentChannels = new ArrayList<ActorRef>();
 
     public PartyBot() {
         final ExecutionContext ec = context().system().dispatcher();
         context().system().scheduler().schedule(IMMEDIATELY,
                                                 PARTY_DELAY,
                                                 self(),
-                                                JOIN_ALL_MSG,
+                                                IDENTIFY_MSG,
                                                 ec,
                                                 self());
     }
 
     @Override
     public void onReceive(Object msg) throws Exception {
-        // TODO: Check the implemented functionality
-        if (msg instanceof JoinAllChannels) {
-            // get all the channels from ChannelManager
+        if (msg instanceof IdentifyChannels) {
+            // Get all the channels from ChannelManager
+            // Handle them below
             context().actorSelection("/user/channels/*")
                 .tell(new Identify(USERNAME), self());
-                //.tell(new ChannelManager.GetAllChannels(), self());
         } else if (msg instanceof ActorIdentity) {
             ActorIdentity identity = (ActorIdentity) msg;
+
             if (identity.correlationId().equals(USERNAME)) {
                 ActorRef channel = identity.getRef();
                 if (channel != null && !currentChannels.contains(channel)) {
@@ -67,7 +67,7 @@ public class PartyBot extends UntypedActor {
     /**
      * Serializable class for handling PartyBot's scheduler messages
      */
-    private static class JoinAllChannels implements Serializable {
+    private static class IdentifyChannels implements Serializable {
 	private static final long serialVersionUID = 1L;
     }
 }

@@ -12,14 +12,15 @@ import akkachat.JokeConnectionClosedException;
 
 public class Joker extends UntypedActor {
     private final String JOKE_CHANNEL = "jokes";
+    private final String JOKER_PATH = "jokeGenerator";
     private final String USERNAME = "Joker";
     private final int NUM_RESETS = 10;
+
     private ActorRef jokeChannel;
     private ActorRef jokeGenerator;
 
     @Override
     public void preStart() {
-        // TODO: do we need to wait for the response?
         context().actorSelection("/user/channels")
             .tell(new GetOrCreateChannel(JOKE_CHANNEL), self());
         context().system().eventStream().subscribe(self(), NewSession.class);
@@ -27,21 +28,27 @@ public class Joker extends UntypedActor {
 
     @Override
     public void onReceive(Object msg) throws Exception {
-        if (msg instanceof String && jokeChannel != null) {
+        if (msg instanceof String &&
+            jokeChannel != null &&
+            getSender().path().name().equals(JOKER_PATH)) {
             final String joke = (String) msg;
+
             context().actorSelection("/user/channels/" + JOKE_CHANNEL)
                 .tell(new ChatMessage(USERNAME, joke), self());
         } else if (msg instanceof NewSession && jokeChannel != null) {
             final NewSession session = (NewSession) msg;
+
             context().actorSelection("/user/channels/" + JOKE_CHANNEL)
                 .tell(new AddUser(session.session), self());
         } else if (msg instanceof ActorRef && jokeChannel == null) {
-            // msg contains the joke channel -> start the jokeGenerator
-            jokeChannel = (ActorRef)msg;
-            System.out.println(jokeChannel.path());
-            ActorRef jokeGenerator = context().actorOf(
-                Props.create(JokeGenerator.class),
-                "jokeGenerator");
+            jokeChannel = (ActorRef) msg;
+
+            if (jokeChannel.path().name().equals(JOKE_CHANNEL)) {
+                // msg contains the joke channel -> start the joke generator
+                jokeGenerator = context().actorOf(
+                    Props.create(JokeGenerator.class),
+                    "jokeGenerator");
+            }
         } else {
             unhandled(msg);
         }
