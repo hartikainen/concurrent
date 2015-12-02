@@ -41,9 +41,10 @@ public class Joker extends UntypedActor {
             context().actorSelection("/user/channels/" + JOKE_CHANNEL)
                 .tell(new AddUser(session.session), self());
         } else if (msg instanceof ActorRef && jokeChannel == null) {
-            jokeChannel = (ActorRef) msg;
+            final ActorRef channel = (ActorRef) msg;
 
-            if (jokeChannel.path().name().equals(JOKE_CHANNEL)) {
+            if (channel.path().name().equals(JOKE_CHANNEL)) {
+                jokeChannel = channel;
                 // msg contains the joke channel -> start the joke generator
                 jokeGenerator = context().actorOf(
                     Props.create(JokeGenerator.class),
